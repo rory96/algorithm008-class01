@@ -197,4 +197,25 @@ $$
 
 双端队列是 Stack 和 Queue 的结合，可以从两端添加或者删除数据，添加删除皆为O(1)，查询为O(n)。
 
- 
+## Priority Queue 优先队列
+
+Java 实现的优先级队列：[PriorityQueue\<E\>](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/PriorityQueue.html)
+
+> An unbounded priority [queue](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Queue.html) based on a priority heap. The elements of the priority queue are ordered according to their [natural ordering](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Comparable.html), or by a [`Comparator`](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Comparator.html) provided at queue construction time, depending on which constructor is used. A priority queue does not permit `null` elements. A priority queue relying on natural ordering also does not permit insertion of non-comparable objects (doing so may result in `ClassCastException`).
+>
+> **Note that this implementation is not synchronized.** Multiple threads should not access a `PriorityQueue` instance concurrently if any of the threads modifies the queue. Instead, use the thread-safe [`PriorityBlockingQueue`](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/PriorityBlockingQueue.html) class.
+
+基于优先级堆(priority heap)，默认情况下由元素的自然顺序排序。也可以在构造方法中传一个自定义的 `Comparator` 来排序。
+
+`PriorityQueue` 不允许 `null` 元素，也不允许不可排序的元素 (可能会报错 `ClassCasrException`)。
+
+`PriorityQueue` 不是线程安全的，如果有多线程并发操作的情况，推荐使用 `PriorityBlockingQueue`。
+
+插入操作：O(1)
+
+取出操作：O(logN) - 通过元素的优先级取出，底层数据结构比较复杂
+
+数据结构：heap，BST，treap
+
+ ## 作业：改写代码
+
