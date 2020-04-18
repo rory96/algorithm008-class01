@@ -217,5 +217,13 @@ Java 实现的优先级队列：[PriorityQueue\<E\>](https://docs.oracle.com/en/
 
 数据结构：heap，BST，treap
 
- ## 作业：改写代码
+## 栈，队列题解Trick
+
+### 栈
+
+- 最近相关性
+
+ ## 改写代码
+
+## PriorityQueue 源码分析
 
