@@ -227,3 +227,227 @@ Java 实现的优先级队列：[PriorityQueue\<E\>](https://docs.oracle.com/en/
 
 ## PriorityQueue 源码分析
 
+PriorityQueue 不允许空元素，不是线程安全的 (线程安全推荐使用：PriorityBlockingQueue)
+
+### 属性
+
+```java
+transient Object[] queue; // non-private to simplify nested class access
+```
+
+PriorityQueue 是一个二叉堆 (Binary Heap)，两个子元素为 `queue[2*n+1]` 和 `queue[2*(n+1)]`。PriorityQueue 中的元素是由 comparator 来排序的，comparator 是构造 PriorityQueue 时可传的参数，如果为 null，则使用默认排序 - 元素的自然排序。
+
+```java
+int size; // priority queue 中的元素个数，与 ArrayList 类似
+
+private final Comparator<? super E> comparator;
+
+// 最大元素个数为什么是 MAX_VALUE - 8 呢？
+// 源码中的注释解释了，有些 VM 会在数组中保留对象头的空间 (head words)
+private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+```
+
+### 构造方法
+
+```java
+private static final int DEFAULT_INITIAL_CAPACITY = 11; // 默认初始化容量
+// 构造方法
+/**
+ * 1、默认无参构造方法默认容量为11
+ */
+public PriorityQueue() {
+    this(DEFAULT_INITIAL_CAPACITY, null);
+}
+/**
+ * 2、构造方法参数为初始化容量
+ */
+public PriorityQueue(int initialCapacity) {
+    this(initialCapacity, null);
+}
+/**
+ * 3、构造方法参数为 Comparator，用来对比元素优先级
+ */
+public PriorityQueue(Comparator<? super E> comparator) {
+    this(DEFAULT_INITIAL_CAPACITY, comparator);
+}
+/**
+ * 4、2和3构造方法的合体
+ */
+public PriorityQueue(int initialCapacity,
+                     Comparator<? super E> comparator) {
+    // Note: This restriction of at least one is not actually needed,
+    // but continues for 1.5 compatibility
+    if (initialCapacity < 1)
+        throw new IllegalArgumentException();
+    this.queue = new Object[initialCapacity];
+    this.comparator = comparator;
+}
+```
+
+```java
+/**
+ * 5、初始化队列元素，传入一个集合
+ */
+public PriorityQueue(Collection<? extends E> c) {
+    if (c instanceof SortedSet<?>) {
+        SortedSet<? extends E> ss = (SortedSet<? extends E>) c;
+        this.comparator = (Comparator<? super E>) ss.comparator();
+        initElementsFromCollection(ss);
+    }
+    else if (c instanceof PriorityQueue<?>) {
+        PriorityQueue<? extends E> pq = (PriorityQueue<? extends E>) c;
+        this.comparator = (Comparator<? super E>) pq.comparator();
+        initFromPriorityQueue(pq);
+    }
+    else {
+        this.comparator = null;
+        initFromCollection(c);
+    }
+}
+```
+
+5、该构造方法中传入的 `Collection` 如果是是 `SortedSet` 和 `PriorityQueue` 或其子类，则初始化 comparator，否则默认 comparator 为空，然后从传入的集合中初始化元素。
+
+### 主要方法
+
+内部维护了一个 Object 数组，所有的操作通过操作 Object 数组完成。
+
+初始化时，会通过初始化方法调用 `heapify` 将数组初始化为堆。
+
+#### 扩容
+
+```java
+private void grow(int minCapacity) {
+    int oldCapacity = queue.length;
+    // 小于64，双倍扩容；否则扩容50%
+    int newCapacity = oldCapacity + ((oldCapacity < 64) ?
+                                     (oldCapacity + 2) :
+                                     (oldCapacity >> 1));
+    // overflow-conscious code
+    // 扩容之后检测是否大于最大容量
+    if (newCapacity - MAX_ARRAY_SIZE > 0)
+        newCapacity = hugeCapacity(minCapacity);
+    queue = Arrays.copyOf(queue, newCapacity);
+}
+```
+
+1. 当数组比较小时（小于64），双倍扩容
+2. 当数组容量较大时，扩容50%
+
+#### 添加元素
+
+添加元素有两个方法：`add(E e)` 和 `offer(E e)`
+
+```java
+public boolean add(E e) {
+    return offer(e);
+}
+public boolean offer(E e) {
+    if (e == null)
+        throw new NullPointerException();
+    modCount++;
+    int i = size;
+    if (i >= queue.length)
+        grow(i + 1);
+    siftUp(i, e);
+    size = i + 1;
+    return true;
+}
+private void siftUp(int k, E x) {
+    if (comparator != null)
+        siftUpUsingComparator(k, x, queue, comparator);
+    else
+        siftUpComparable(k, x, queue);
+}
+
+private static <T> void siftUpComparable(int k, T x, Object[] es) {
+    Comparable<? super T> key = (Comparable<? super T>) x;
+    while (k > 0) {
+        // 找到父节点
+        int parent = (k - 1) >>> 1;
+        Object e = es[parent];
+        // 如果比父节点大，跳出循环，不继续操作
+        if (key.compareTo((T) e) >= 0)
+            break;
+        // 比父节点小，就与父节点交换位置，继续向上比较，直到比父节点大
+        es[k] = e;
+        k = parent;
+    }
+    es[k] = key;
+}
+```
+
+1. 判断元素是否为空，空则报空指针异常（队列中的元素不允许为空）
+2. 修改次数加1
+3. 判断是否需要扩容，如果数组长度不够了，先扩容
+4. 插入到最后一个元素的后一个位置
+5. `siftUp` 通过 comparator 将元素放进合适的位置 (通过优先级排序)
+6. 从最底处向上堆化，比父节点小则交换位置，直到比父节点大。由此可见，PriorityQueue 是一个**小顶堆**
+7. 队列元素个数加一
+
+#### 移除元素
+
+因为内部维护的是数组，实际是是通过数组下标来删除元素，并将数组重新排序。
+
+```java
+public E remove() {
+    E x = poll();
+    if (x != null)
+        return x;
+    else
+        throw new NoSuchElementException();
+}
+public E poll() {
+    final Object[] es;
+    final E result;
+
+    if ((result = (E) ((es = queue)[0])) != null) {
+        modCount++;
+        final int n;
+        final E x = (E) es[(n = --size)];
+        es[n] = null;
+        if (n > 0) {
+            final Comparator<? super E> cmp;
+            if ((cmp = comparator) == null)
+                siftDownComparable(0, x, es, n);
+            else
+                siftDownUsingComparator(0, x, es, n, cmp);
+        }
+    }
+    return result;
+}
+private static <T> void siftDownComparable(int k, T x, Object[] es, int n) {
+    // assert n > 0;
+    Comparable<? super T> key = (Comparable<? super T>)x;
+    // 只需要比较一半，叶子结点占了一半，不需要比较叶子结点。
+    int half = n >>> 1;           // loop while a non-leaf
+    while (k < half) {
+        // 寻找子节点，当前节点*2+1
+        int child = (k << 1) + 1; // assume left child is least
+        Object c = es[child];
+        int right = child + 1;
+        if (right < n &&
+            ((Comparable<? super T>) c).compareTo((T) es[right]) > 0)
+          	// 取左右子节点中小的一个
+            c = es[child = right];
+      	// 如果比子节点小，则不继续操作
+        if (key.compareTo((T) c) <= 0)
+            break;
+        es[k] = c;
+      	// 指针移到子节点，继续比较
+        k = child;
+    }
+    es[k] = key;
+}
+```
+
+1. remove 方法内部也是调用 poll 方法，只不过元素为 null 时报错
+2. 自上到下堆化，一直向下与最小的子节点比较
+3. 如果比最小的子节点大，交换位置，再继续与最小的子节点比较
+4. 直到比最小的子节点小，就不需要继续交换。
+
+### 总结
+
+- PriorityQueue 是一个小顶堆
+- 非线程安全
+- 入队和出队都是对堆的插入和删除操作实现
