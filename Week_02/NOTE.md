@@ -225,3 +225,9 @@ class Solution {
 ## 二叉堆
 
 通过二叉树来实现，是一种完全二叉树。Java 中的 PriorityQueue 是一种二叉堆的结构。
+
+## 其他
+
+- Fibonacci Heap
+- Strict Fibonacci Heap
+- 2 - 3 Heap
