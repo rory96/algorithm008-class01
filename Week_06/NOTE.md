@@ -62,9 +62,9 @@ class Solution {
 
 # 最长公共子串
 
-![img](/Users/leiyongqi/github/algorithm008-class01/Week_06/longgestCommonSubstring1.png)
+![img](longgestCommonSubstring1.png)
 
-![image-20200530134041410](/Users/leiyongqi/github/algorithm008-class01/Week_06/longgestCommonSubstring2.png)
+![image-20200530134041410](longgestCommonSubstring2.png)
 
 主要思想就是通过将两个字符串放在一个二维数组中，计算最短字符串开始的最长子串。
 
@@ -132,7 +132,7 @@ class Solution {
 
 这种解法在 Leetcode 上执行超时：
 
-![image-20200530155544585](/Users/leiyongqi/github/algorithm008-class01/Week_06/triangle1.png)
+![image-20200530155544585](triangle1.png)
 
 所以需要优化该方法，将递归路径记录下来。
 
@@ -162,7 +162,7 @@ class Solution {
 
 这种解法比之前的效率高出很多：
 
-![记忆化搜索（递归）](/Users/leiyongqi/github/algorithm008-class01/Week_06/triangle2.png)
+![记忆化搜索（递归）](triangle2.png)
 
 ## 解法三：DP
 
@@ -212,7 +212,7 @@ class Solution {
 
 效率提高很多，但是居然没有记忆化搜索强？？？？？？？
 
-![DP优化](/Users/leiyongqi/github/algorithm008-class01/Week_06/triangle3.png)
+![DP优化](triangle3.png)
 
 # 总结
 
